@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title> Secure Chat </title>
+  <link rel="stylesheet" href="stylesheets/style.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script defer src="javascripts/app.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div v-if="page === 'login'" class="login-div">
+      <div class="login-box">
+        <img src="images/logo.png" class="login-logo" alt="Secure Chat System Logo" />
+        <h2>Login</h2>
+        <input type="text" v-model="username" placeholder="Username">
+        <input type="password" v-model="password" placeholder="Password">
+        <button @click="login">Login</button>
+        <button @click="page = 'register'" class="register-link">Register</button>
+      </div>
+    </div>
+
+    <div v-else-if="page === 'register'" class="login-div">
+      <div class="login-box">
+        <img src="images/logo.png" class="login-logo" alt="Secure Chat System Logo" />
+        <h2>Register</h2>
+        <input type="text" v-model="username" placeholder="Username">
+        <input type="text" v-model="display_name" placeholder="Display Name">
+        <input type="password" v-model="password" placeholder="Password">
+        <button @click="register">Register</button>
+        <button @click="page = 'login'" class="register-link">Login</button>
+        <div v-if="register_state === 'failed'"> Registration failed (duplicate username maybe??) </div>
+      </div>
+    </div>
+
+    <div v-else-if="page === 'chats'">
+      <header class="site-header">
+        <img class="site-logo" src="images/logo.png" alt="Secure Chat System">
+        <div class="header-right">
+          <button class="logout-button" @click="logout">Logout</button>
+        </div>
+      </header>
+      <div class="container">
+        <div class="left-pane">
+          <div class="list-header">
+            <span class="list-title">Chats</span>
+            <button v-if="showUserPicker == false" class="small-button btn btn-outline" @click="openUserPicker">New
+              Chat</button>
+          </div>
+
+          <nav class="chat-list" aria-label="Chats">
+            <template v-for="(user, user_id) in users" :key="user_id">
+              <button v-if="user.active_chat" class="chat-item" :class="{ active: user_id === selectedChat }"
+                @click="selectChat(user_id)">
+                <div class="chat-left">
+                  <span class="status-pill" :class="user['online'] ? 'online' : 'offline'">
+                    {{ user['online'] ? 'online' : 'offline' }}
+                  </span>
+                  <span class="chat-title">{{ label(user_id) }}</span>
+                </div>
+
+                <span v-if="user['unread_count'] > 0" class="unread-badge">
+                  {{ user['unread_count'] > 99 ? '99+' : user['unread_count'] }}
+                </span>
+              </button>
+            </template>
+          </nav>
+        </div>
+        <div class="right-pane">
+          <div v-if="showUserPicker" tabindex="0">
+            <div class="modal-content">
+              <div class="chat-header">Choose a user to start a chat with</div>
+              <div class="user-list">
+                <div class="user-card" v-for="(user, user_id) in users" :key="user_id" @click="startChat(user_id)">
+                  <div class="user-info">
+                    <div class="user-label">{{ label(user_id) }}</div>
+                    <div v-if="label(user_id) !== user_id" class="user-list-uid">{{ user_id }}</div>
+                  </div>
+                  <div v-if="user['server'] == server_id" class="user-location">Local</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <template v-else>
+            <div class="chat-header">{{ label(selectedChat) }}
+              <span v-if="label(selectedChat) != selectedChat" class="chat-header-uid"> {{ selectedChat }}</span>
+              <div v-if="users[selectedChat]['server'] == server_id" class="user-location">Local</div>
+            </div>
+            <div class="chat-conversation content">
+              <div v-for="(msg,i) in users[selectedChat]['messages']" :key="i" class="message-row"
+                :class="msg.sender === user_id ? 'from-me' : 'from-them'">
+                <div class="bubble">
+                  <div v-if="selectedChat === 'Public' && msg.sender !== user_id" class="message-sender">
+                    {{ label(msg.sender) }} <!-- show name instead of uid -->
+                  </div>
+                  <template v-if="msg.type == 'text'">
+                    <div class="message-bubble">{{ msg.message }}</div>
+                  </template>
+                  <template v-else-if="msg.type =='file'">
+                    <div class="file-card">
+                      <div class="file-name">{{ msg.filename }}</div>
+                      <div class="file-meta">{{ (msg.filesize/1024).toFixed(1) }} KB</div>
+                      <a class="btn" :href="msg.url" :download="msg.filename">Download</a>
+                  </template>
+                  <div class="timestamp">{{ msg.timestamp }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="compose-message">
+              <input class="msg-input" placeholder="Write your message here" v-model="draft">
+              <div class="row">
+                <input type="file" v-if="selectedChat != 'Public'" id="fileInput">
+                <button @click="sendMessage()">Send</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

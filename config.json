@@ -1,0 +1,9 @@
+{
+    "bootstrap_servers": [
+        {
+            "host": "localhost",
+            "port": 12345,
+            "pubkey": "SERVER_1_PUBKEY"
+        }
+    ]
+}
